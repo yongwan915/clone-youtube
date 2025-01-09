@@ -3,7 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 import Header from './components/Header/Header';
 import Sidebar from './components/Sidebar/Sidebar';
 import { Routes, Route } from 'react-router-dom';
-import routes from './routes';
+import routes from './routes/routes';
 import './App.css';
 
 function App() {

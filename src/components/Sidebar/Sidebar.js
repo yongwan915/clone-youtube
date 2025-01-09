@@ -12,11 +12,14 @@ import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import StreamIcon from '@mui/icons-material/Stream';
-import routes from '../../routes';
+import routes from '../../routes/routes';
 
 function Sidebar({ isOpen }) {
   const location = useLocation();
   
+  // 로그인 상태 체크
+  const isLoggedIn = localStorage.getItem('token');
+
   const getIcon = (path) => {
     switch (path) {
       case '/':
@@ -58,7 +61,7 @@ function Sidebar({ isOpen }) {
     }
     
     if (item.type.includes('sidebar-login')) {
-      return isOpen ? (
+      return isOpen && !isLoggedIn ? (
         <div key="login" className="sidebar__login">
           <p>로그인하면 동영상에 좋아요를 표시하고 댓글을 달거나 구독할 수 있습니다.</p>
           <button onClick={() => window.location.href = '/login'}>로그인</button>

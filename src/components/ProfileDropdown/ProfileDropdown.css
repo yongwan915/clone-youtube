@@ -1,0 +1,30 @@
+.profileDropdown {
+  position: absolute;
+  top: 50px;
+  right: 20px;
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  width: 200px;
+  z-index: 1000;
+}
+
+.profileDropdown__header {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid #e5e5e5;
+  gap: 8px;
+}
+
+.profileDropdown__option {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  cursor: pointer;
+  gap: 8px;
+}
+
+.profileDropdown__option:hover {
+  background-color: #f2f2f2;
+} 
