@@ -1,0 +1,26 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.app {
+  height: 100vh;
+}
+
+.app__page {
+  display: flex;
+  height: calc(100vh - 60px);
+}
+
+.app__content {
+  flex: 1;
+  overflow-y: auto;
+  background-color: #f9f9f9;
+  padding: 20px;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #f9f9f9;
+}
