@@ -13,6 +13,8 @@ import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import StreamIcon from '@mui/icons-material/Stream';
 import routes from '../../routes/routes';
+import LoginButton from '../Button/LoginButton';
+import CreateVideo from '../Button/CreateVideoButton';
 
 function Sidebar({ isOpen }) {
   const location = useLocation();
@@ -64,7 +66,15 @@ function Sidebar({ isOpen }) {
       return isOpen && !isLoggedIn ? (
         <div key="login" className="sidebar__login">
           <p>로그인하면 동영상에 좋아요를 표시하고 댓글을 달거나 구독할 수 있습니다.</p>
-          <button onClick={() => window.location.href = '/login'}>로그인</button>
+          <LoginButton isLoggedIn={isLoggedIn} />
+        </div>
+      ) : null;
+    }
+
+    if (item.type.includes('create-video')) {
+      return isLoggedIn ? (
+        <div key="create-video" className="sidebar__create-video">
+          {/* <CreateVideo /> */}
         </div>
       ) : null;
     }

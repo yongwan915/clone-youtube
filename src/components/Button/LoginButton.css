@@ -1,0 +1,32 @@
+.link__to__login {
+  display: flex;
+  align-items: center;
+  color: #065fd4;
+  text-decoration: none;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  padding: 5px 11px;
+  border-radius: 40px;
+  width: 100px;
+  height: 30=5px;
+  gap: 5px;
+}
+
+.link__to__login:hover {
+  background-color: #def1ff;
+  border-color: #def1ff;
+}
+
+.profile__button {
+  position: relative;
+  cursor: pointer;
+}
+
+.profile__icon {
+  font-size: 24px !important;
+  color: #606060;
+}
+
+.profile__icon:hover {
+  color: #030303;
+}

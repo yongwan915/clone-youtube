@@ -1,12 +1,22 @@
 import React from 'react';
 import './Subscriptions.css';
+import LoginButton from '../../components/Button/LoginButton';
 
 function Subscriptions() {
+  const isLoggedIn = localStorage.getItem('token');
+
   return (
     <div className="subscriptions">
       <h2>구독</h2>
       <div className="subscriptions__content">
-        <p>구독한 채널의 동영상이 여기에 표시됩니다.</p>
+        {isLoggedIn ? (
+          <p>구독한 채널의 동영상이 여기에 표시됩니다.</p>
+        ) : (
+          <div>
+            <p>로그인 후 구독 내역을 확인해보세요.</p>
+            <LoginButton className="subscriptions__login" isLoggedIn={isLoggedIn} />
+          </div>
+        )}
       </div>
     </div>
   );

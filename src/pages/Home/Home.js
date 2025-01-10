@@ -31,6 +31,38 @@ function Home() {
           channel="웹개발 채널"
           image="https://i.ytimg.com/vi/sample2/maxresdefault.jpg"
         />
+        <VideoCard
+          title="김정훈 가이드"
+          views="11.5만회 시청"
+          timestamp="5일 전"
+          channelImage="https://yt3.ggpht.com/ytc/sample2"
+          channel="웹개발 채널"
+          image="https://i.ytimg.com/vi/sample2/maxresdefault.jpg"
+        />
+        <VideoCard
+          title="리액트 완벽 가이드"
+          views="1.5만회 시청"
+          timestamp="1주일 전"
+          channelImage="https://yt3.ggpht.com/ytc/sample2"
+          channel="웹개발 채널"
+          image="https://i.ytimg.com/vi/sample2/maxresdefault.jpg"
+        />
+        <VideoCard
+          title="리액트 완벽 가이드"
+          views="1.5만회 시청"
+          timestamp="1주일 전"
+          channelImage="https://yt3.ggpht.com/ytc/sample2"
+          channel="웹개발 채널"
+          image="https://i.ytimg.com/vi/sample2/maxresdefault.jpg"
+        />
+        <VideoCard
+          title="리액트 완벽 가이드"
+          views="1.5만회 시청"
+          timestamp="1주일 전"
+          channelImage="https://yt3.ggpht.com/ytc/sample2"
+          channel="웹개발 채널"
+          image="https://i.ytimg.com/vi/sample2/maxresdefault.jpg"
+        />
         {/* 더 많은 VideoCard 컴포넌트를 추가할 수 있습니다 */}
       </div>
     </div>

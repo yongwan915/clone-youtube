@@ -47,24 +47,3 @@
 .header__icon:hover {
   color: #030303;
 }
-
-.header__login {
-  display: flex;
-  align-items: center;
-  color: #065fd4;
-  text-decoration: none;
-  border: 1px solid #065fd4;
-  padding: 5px 10px;
-  border-radius: 2px;
-  font-size: 14px;
-  gap: 5px;
-  cursor: pointer;
-}
-
-.header__login:hover {
-  background-color: #def1ff;
-}
-
-.header__login .MuiSvgIcon-root {
-  font-size: 20px;
-} 

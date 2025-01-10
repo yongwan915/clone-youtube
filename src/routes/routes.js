@@ -1,6 +1,6 @@
 import Home from '../pages/Home/Home';
 import Trending from '../pages/Trending/Trending';
-import Subscription from '../pages/Subscription/Subscription';
+import Subscriptions from '../pages/Subscriptions/Subscriptions';
 import History from '../pages/History/History';
 import MyVideos from '../pages/MyVideos/MyVideos';
 import Notifications from '../pages/Notifications/Notifications';
@@ -11,6 +11,8 @@ import Games from '../pages/Games/Games';
 import Sports from '../pages/Sports/Sports';
 import Login from '../pages/Login/Login';
 import SignUp from '../pages/Signup/SignUp';
+import CreateVideo from '../pages/CreateVideo/CreateVideo';
+
 
 const routes = [
     {
@@ -26,8 +28,8 @@ const routes = [
         type: ['sidebar']
     },
     {
-        path: '/subscription',
-        element: Subscription,
+        path: '/subscriptions',
+        element: Subscriptions,
         name: '구독',
         type: ['sidebar']
     },
@@ -100,6 +102,12 @@ const routes = [
         element: SignUp,
         name: '회원가입',
         type: []
+    },
+    {
+        path: '/create-video',
+        element: CreateVideo,
+        name: '동영상 업로드',
+        type: ['page']
     }
 ];
 

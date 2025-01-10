@@ -19,4 +19,15 @@
   justify-content: center;
   height: 400px;
   color: #606060;
+}
+
+.subscriptions__content p {
+  margin-bottom: 20px;
+}
+
+.subscriptions__content div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
 } 

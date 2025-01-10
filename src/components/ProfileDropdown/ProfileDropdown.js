@@ -14,7 +14,7 @@ function ProfileDropdown({ onLogout }) {
       </div>
       <div 
         className="profileDropdown__option" 
-        onClick={onLogout}
+        onClick={ onLogout }
       >
         <LogoutIcon />
         <span>로그아웃</span>

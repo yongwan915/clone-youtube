@@ -7,6 +7,8 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import { Link } from 'react-router-dom';
 import SettingBar from '../SettingBar/SettingBar';
 import ProfileDropdown from '../ProfileDropdown/ProfileDropdown';
+import LoginButton from '../Button/LoginButton';
+import CreateVideoButton from '../Button/CreateVideoButton';
 
 function Header({ onMenuClick }) {
   const [showSettings, setShowSettings] = useState(false);
@@ -17,6 +19,10 @@ function Header({ onMenuClick }) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.href = '/login';
+  };
+
+  const handleProfileClick = () => {
+    setShowProfileMenu(!showProfileMenu);
   };
 
   return (
@@ -37,26 +43,19 @@ function Header({ onMenuClick }) {
       </div>
 
       <div className="header__right">
+        <CreateVideoButton isLoggedIn={isLoggedIn} />
         <SettingsIcon 
           className="header__icon" 
           onClick={() => setShowSettings(!showSettings)}
         />
-        {!isLoggedIn ? (
-          <Link to="/login" className="header__login">
-            <AccountCircleIcon />
-            로그인
-          </Link>
-        ) : (
-          <div className="header__profile">
-            <AccountCircleIcon 
-              className="header__icon" 
-              onClick={() => setShowProfileMenu(!showProfileMenu)}
-            />
-            {showProfileMenu && (
-              <ProfileDropdown onLogout={handleLogout} />
-            )}
-          </div>
-        )}
+        <LoginButton 
+          isLoggedIn={isLoggedIn}
+          onClick={handleProfileClick}
+        >
+          {showProfileMenu && (
+            <ProfileDropdown onLogout={handleLogout} />
+          )}
+        </LoginButton>
         {showSettings && <SettingBar />}
       </div>
     </div>
