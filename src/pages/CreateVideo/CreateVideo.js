@@ -10,7 +10,8 @@ function CreateVideo() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    videoFile: null
+    videoFile: null,
+    thumbnailFile: null
   });
 
   const handleChange = (e) => {
@@ -22,23 +23,45 @@ function CreateVideo() {
   };
 
   const handleFileChange = (e) => {
+    const { name, files } = e.target;
     setFormData(prev => ({
       ...prev,
-      videoFile: e.target.files[0]
-    }));
-  };
-
-  const handleThumbnailChange = (e) => {
-    setFormData(prev => ({
-      ...prev,
-      thumbnailFile: e.target.files[0]
+      [name]: files[0]
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // 여기에 업로드 로직 추가
-    console.log('업로드할 데이터:', formData);
+    
+    try {
+      if (!formData.videoFile || !formData.thumbnailFile) {
+        throw new Error('비디오와 썸네일을 모두 선택해주세요.');
+      }
+
+      const formDataToSend = new FormData();
+      formDataToSend.append('video', formData.videoFile);
+      formDataToSend.append('thumbnail', formData.thumbnailFile);
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('upload_user_id', userId);
+
+      const response = await fetch('http://localhost:8000/api/videos/upload', {
+        method: 'POST',
+        body: formDataToSend
+      });
+
+      if (!response.ok) {
+        throw new Error('동영상 업로드에 실패했습니다.');
+      }
+
+      const data = await response.json();
+      alert('동영상이 성공적으로 업로드되었습니다!');
+      window.location.href = '/';
+      
+    } catch (error) {
+      console.error('업로드 에러:', error);
+      alert(error.message);
+    }
   };
 
   if (!isLoggedIn) {
@@ -46,54 +69,46 @@ function CreateVideo() {
   }
 
   return (
-    <div className="create-video">
+    <div className="createVideo">
       <h2>동영상 업로드</h2>
-      <form onSubmit={handleSubmit} className="upload-form">
-        <div className="form-group">
-          <label>동영상 파일</label>
-          <input 
-            type="file" 
-            accept="video/*"
-            onChange={handleFileChange}
-            required
-          />
-        </div>
-        <div className="form-group">
-          <label>썸네일 파일</label>
-          <input 
-            type="file" 
-            accept="image/*"
-            onChange={handleThumbnailChange}
-            required
-          />
-        </div>
-        
-        <div className="form-group">
-          <label>제목</label>
-          <input 
+      <form onSubmit={handleSubmit}>
+        <div>
+          <input
             type="text"
             name="title"
             value={formData.title}
             onChange={handleChange}
-            placeholder="동영상 제목을 입력하세요"
+            placeholder="제목"
             required
           />
         </div>
-
-        <div className="form-group">
-          <label>설명</label>
-          <textarea 
+        <div>
+          <textarea
             name="description"
             value={formData.description}
             onChange={handleChange}
-            placeholder="동영상 설명을 입력하세요"
-            rows="4"
+            placeholder="설명"
           />
         </div>
-
-        <button type="submit" className="upload-button">
-          업로드
-        </button>
+        <div>
+          <input
+            type="file"
+            name="videoFile"
+            onChange={handleFileChange}
+            accept="video/*"
+            required
+          />
+        </div>
+        <div>
+          <input
+            type="file"
+            name="thumbnailFile"
+            onChange={handleFileChange}
+            accept="image/*"
+            required
+          />
+        </div>
+        <button type="submit">업로드</button>
       </form>
     </div>
   );

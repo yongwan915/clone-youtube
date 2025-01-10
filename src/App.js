@@ -5,7 +5,8 @@ import Sidebar from './components/Sidebar/Sidebar';
 import { Routes, Route } from 'react-router-dom';
 import routes from './routes/routes';
 import './App.css';
-
+import Watch from './pages/Watch/Watch';
+import Home from './pages/Home/Home';
 function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
@@ -21,6 +22,8 @@ function App() {
           <Sidebar isOpen={isSidebarOpen} />
           <div className="app__content">
             <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/watch/:id" element={<Watch />} />
               {routes.map((route) => 
                 route.path && (
                   <Route
