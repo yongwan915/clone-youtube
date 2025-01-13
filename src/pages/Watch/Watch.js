@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import './Watch.css';
+import Comments from '../../components/Comments/Comments';
 
 function Watch() {
   const { videoId } = useParams();
@@ -66,6 +67,7 @@ function Watch() {
           <p>{video.description}</p>
         </div>
       </div>
+      <Comments videoId={videoId} />
     </div>
   );
 }

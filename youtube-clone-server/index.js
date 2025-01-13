@@ -215,8 +215,7 @@ app.get('/api/videos/:videoId', async (req, res) => {
     const [videos] = await db.query(`
       SELECT 
         v.*,
-        u.user_name,
-        u.login_id as channel_name
+        u.user_name as channel_name
       FROM videos v
       JOIN users u ON v.upload_user_id = u.user_id
       WHERE v.video_id = ?
@@ -235,6 +234,174 @@ app.get('/api/videos/:videoId', async (req, res) => {
     res.json(video);
   } catch (error) {
     console.error('비디오 상세 정보 조회 에러:', error);
+    res.status(500).json({ message: '서버 에러' });
+  }
+});
+
+// JWT 인증 미들웨어
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ message: '인증 토큰이 필요합니다.' });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(403).json({ message: '유효하지 않은 토큰입니다.' });
+    }
+    req.user = user;
+    next();
+  });
+};
+
+// 댓글 목록 조회 API
+app.get('/api/videos/:videoId/comments', async (req, res) => {
+  try {
+    const { videoId } = req.params;
+    console.log('댓글 조회 요청:', videoId);
+    
+    const [comments] = await db.query(`
+      SELECT 
+        c.comment_id,
+        c.video_id,
+        c.user_id,
+        c.content,
+        c.created_at,
+        c.updated_at,
+        u.user_name
+      FROM comments c
+      LEFT JOIN users u ON c.user_id = u.user_id
+      WHERE c.video_id = ?
+      ORDER BY c.created_at DESC
+    `, [videoId]);
+
+    console.log('조회된 댓글 수:', comments.length);
+    res.json(comments);
+
+  } catch (error) {
+    // 자세한 에러 로깅
+    console.error('댓글 목록 조회 중 에러 발생:', {
+      error: error.message,
+      stack: error.stack,
+      sqlMessage: error.sqlMessage,
+      sqlState: error.sqlState
+    });
+
+    res.status(500).json({ 
+      message: '서버 에러가 발생했습니다.',
+      error: error.message 
+    });
+  }
+});
+
+// 댓글 작성 API
+app.post('/api/videos/:videoId/comments', authenticateToken, async (req, res) => {
+  try {
+    const { videoId } = req.params;
+    const { content } = req.body;
+    const user_id = req.user.user_id;
+
+    console.log('댓글 작성 요청:', { videoId, content, user_id });
+
+    // 비디오 존재 여부 확인
+    const [video] = await db.query('SELECT video_id FROM videos WHERE video_id = ?', [videoId]);
+    
+    if (video.length === 0) {
+      return res.status(404).json({ message: '존재하지 않는 비디오입니다.' });
+    }
+
+    const [result] = await db.query(`
+      INSERT INTO comments 
+      (video_id, user_id, content, created_at) 
+      VALUES (?, ?, ?, NOW())
+    `, [videoId, user_id, content]);
+
+    // 새로 작성된 댓글 정보 조회 (profile_image 필드 제거)
+    const [newComment] = await db.query(`
+      SELECT 
+        c.comment_id,
+        c.video_id,
+        c.user_id,
+        c.content,
+        c.created_at,
+        c.updated_at,
+        u.user_name
+      FROM comments c
+      LEFT JOIN users u ON c.user_id = u.user_id
+      WHERE c.comment_id = ?
+    `, [result.insertId]);
+
+    console.log('생성된 댓글:', newComment[0]);
+    res.status(201).json(newComment[0]);
+  } catch (error) {
+    console.error('댓글 작성 에러:', error);
+    res.status(500).json({ 
+      message: '서버 에러가 발생했습니다.',
+      error: error.message 
+    });
+  }
+});
+
+// 댓글 수정 API
+app.put('/api/comments/:commentId', authenticateToken, async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const { content } = req.body;
+    const user_id = req.user.user_id;
+
+    const [comment] = await db.query(
+      'SELECT user_id FROM comments WHERE comment_id = ?',
+      [commentId]
+    );
+
+    if (comment.length === 0) {
+      return res.status(404).json({ message: '댓글을 찾을 수 없습니다.' });
+    }
+
+    if (comment[0].user_id !== user_id) {
+      return res.status(403).json({ message: '댓글을 수정할 권한이 없습니다.' });
+    }
+
+    await db.query(`
+      UPDATE comments 
+      SET content = ?, updated_at = NOW() 
+      WHERE comment_id = ?
+    `, [content, commentId]);
+
+    res.json({ message: '댓글이 수정되었습니다.' });
+  } catch (error) {
+    console.error('댓글 수정 에러:', error);
+    res.status(500).json({ message: '서버 에러' });
+  }
+});
+
+// 댓글 삭제 API
+app.delete('/api/comments/:commentId', authenticateToken, async (req, res) => {
+  try {
+    const { commentId } = req.params;
+    const user_id = req.user.user_id;
+
+    // 댓글 작성자 확인
+    const [comment] = await db.query(
+      'SELECT user_id FROM comments WHERE comment_id = ?',
+      [commentId]
+    );
+
+    if (comment.length === 0) {
+      return res.status(404).json({ message: '댓글을 찾을 수 없습니다.' });
+    }
+
+    if (comment[0].user_id !== user_id) {
+      return res.status(403).json({ message: '댓글을 삭제할 권한이 없습니다.' });
+    }
+
+    await db.query('DELETE FROM comments WHERE comment_id = ?', [commentId]);
+
+    res.json({ message: '댓글이 삭제되었습니다.' });
+  } catch (error) {
+    console.error('댓글 삭제 에러:', error);
     res.status(500).json({ message: '서버 에러' });
   }
 });
