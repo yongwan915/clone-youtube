@@ -8,11 +8,12 @@ function Home() {
   useEffect(() => {
     const fetchVideos = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/videos');
+        const response = await fetch('http://localhost:3001/api/videos');
         if (!response.ok) {
           throw new Error('서버 에러');
         }
         const data = await response.json();
+        console.log('받은 비디오 데이터:', data);
         setVideos(data);
       } catch (error) {
         console.error('비디오 목록 가져오기 실패:', error);
@@ -28,13 +29,13 @@ function Home() {
       <div className="home__videos">
         {videos.map((video) => (
           <VideoCard
-            key={video.id}
-            id={video.id}
-            image={video.thumbnail_url}
+            key={video.video_id}
+            video_id={video.video_id}
+            image={`http://localhost:3001/public${video.thumbnail_url}`}
             title={video.title}
-            channel={video.channel_name}
+            channel={video.channel_name || video.user_name}
             views={`조회수 ${video.views}회`}
-            timestamp={video.timestamp}
+            timestamp={new Date(video.created_at).toLocaleDateString()}
             channelImage="https://yt3.ggpht.com/ytc/default-avatar.jpg"
           />
         ))}

@@ -4,12 +4,12 @@ import './CreateVideoButton.css';
 import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
 
 function CreateVideoButton({ isLoggedIn }) {
-  const userId = localStorage.getItem('user') 
-    ? JSON.parse(localStorage.getItem('user')).userId 
+  const user_id = localStorage.getItem('user') 
+    ? JSON.parse(localStorage.getItem('user')).user_id 
     : '';
 
   return isLoggedIn ? (
-    <Link to={`/create-video?userId=${userId}`} className="create-video-button">
+    <Link to={`/create-video?user_id=${user_id}`} className="create-video-button">
       <VideoLibraryIcon />
       동영상 업로드
     </Link>

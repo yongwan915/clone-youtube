@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 function Login() {
   // 로그인 폼 데이터 상태 관리
   const [formData, setFormData] = useState({
-    userId: '',
+    login_id: '',
     password: ''
   });
 
@@ -38,7 +38,6 @@ function Login() {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         
-        alert('로그인 성공!');
         window.location.href = '/';
       } else {
         alert(data.error || '로그인에 실패했습니다.');
@@ -57,8 +56,8 @@ function Login() {
           <div className="id__input">
             <input 
               type="text" 
-              name="userId"
-              value={formData.userId}
+              name="login_id"
+              value={formData.login_id}
               onChange={handleChange}
               placeholder="아이디" 
             />

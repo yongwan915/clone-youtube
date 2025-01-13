@@ -12,6 +12,7 @@ import Sports from '../pages/Sports/Sports';
 import Login from '../pages/Login/Login';
 import SignUp from '../pages/Signup/SignUp';
 import CreateVideo from '../pages/CreateVideo/CreateVideo';
+import Watch from '../pages/Watch/Watch';
 
 
 const routes = [
@@ -108,6 +109,12 @@ const routes = [
         element: CreateVideo,
         name: '동영상 업로드',
         type: ['page']
+    },
+    {
+        path: '/watch/:videoId',
+        element: Watch,
+        name: '동영상 시청',
+        type: []
     }
 ];
 

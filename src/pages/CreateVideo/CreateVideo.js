@@ -4,7 +4,10 @@ import './CreateVideo.css';
 
 function CreateVideo() {
   const [searchParams] = useSearchParams();
-  const userId = searchParams.get('userId');
+  const user = localStorage.getItem('user') 
+    ? JSON.parse(localStorage.getItem('user'))
+    : null;
+  const user_id = user ? user.user_id : null;
   const isLoggedIn = localStorage.getItem('token');
   
   const [formData, setFormData] = useState({
@@ -43,7 +46,7 @@ function CreateVideo() {
       formDataToSend.append('thumbnail', formData.thumbnailFile);
       formDataToSend.append('title', formData.title);
       formDataToSend.append('description', formData.description);
-      formDataToSend.append('upload_user_id', userId);
+      formDataToSend.append('upload_user_id', user_id);
 
       const response = await fetch('http://localhost:8000/api/videos/upload', {
         method: 'POST',

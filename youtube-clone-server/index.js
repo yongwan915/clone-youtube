@@ -81,38 +81,39 @@ const upload = multer({
 const JWT_SECRET = 'your-secret-key';  // 실제로는 환경변수로 관리해야 함
 
 // 회원가입 API
-app.post('/api/signup', (req, res) => {
-  const { userId, password, user_name, email } = req.body;
-  
-  if (!userId || !password || !user_name || !email) {
-    return res.status(400).json({ error: '모든 필드를 입력해주세요.' });
-  }
-
-  const sql = 'INSERT INTO users (user_id, password, user_name, email) VALUES (?, ?, ?, ?)';
-  
-  db.query(sql, [userId, password, user_name, email], (err, result) => {
-    if (err) {
-      console.error('SQL 에러:', err);
-      if (err.code === 'ER_DUP_ENTRY') {
-        return res.status(400).json({ error: '이미 존재하는 아이디 또는 이메일입니다.' });
-      }
-      return res.status(500).json({ error: '회원가입 실패' });
+app.post('/api/signup', async (req, res) => {
+  try {
+    const { login_id, password, user_name, email } = req.body;
+    
+    if (!login_id || !password || !user_name || !email) {
+      return res.status(400).json({ error: '모든 필드를 입력해주세요.' });
     }
+
+    const sql = 'INSERT INTO users (login_id, password, user_name, email) VALUES (?, ?, ?, ?)';
+    
+    const [result] = await db.query(sql, [login_id, password, user_name, email]);
     res.json({ message: '회원가입 성공' });
-  });
+    
+  } catch (err) {
+    console.error('SQL 에러:', err);
+    if (err.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ error: '이미 존재하는 아이디 또는 이메일입니다.' });
+    }
+    return res.status(500).json({ error: '회원가입 실패' });
+  }
 });
 
 // 로그인 API
 app.post('/api/login', async (req, res) => {
   try {
-    const { userId, password } = req.body;
+    const { login_id, password } = req.body;
     
-    if (!userId || !password) {
+    if (!login_id || !password) {
       return res.status(400).json({ error: '아이디와 비밀번호를 입력해주세요.' });
     }
 
-    const query = 'SELECT * FROM users WHERE user_id = ? AND password = ?';
-    const [results] = await db.query(query, [userId, password]);
+    const query = 'SELECT * FROM users WHERE login_id = ? AND password = ?';
+    const [results] = await db.query(query, [login_id, password]);
     
     if (results.length === 0) {
       return res.status(401).json({ error: '아이디 또는 비밀번호가 일치하지 않습니다.' });
@@ -120,8 +121,8 @@ app.post('/api/login', async (req, res) => {
 
     const token = jwt.sign(
       { 
-        id: results[0].id,
-        userId: results[0].user_id,
+        user_id: results[0].user_id,
+        login_id: results[0].login_id,
         user_name: results[0].user_name 
       },
       JWT_SECRET,
@@ -132,8 +133,8 @@ app.post('/api/login', async (req, res) => {
       message: '로그인 성공',
       token,
       user: {
-        id: results[0].id,
-        userId: results[0].user_id,
+        user_id: results[0].user_id,
+        login_id: results[0].login_id,
         user_name: results[0].user_name
       }
     });
@@ -153,13 +154,12 @@ app.post('/api/videos/upload', upload.fields([
     const videoPath = `/videos/${req.files.video[0].filename}`;
     const thumbnailPath = `/thumbnails/${req.files.thumbnail[0].filename}`;
 
-    // DB에 비디오 정보 저장 (프로미스 방식으로 수정)
     const query = `
       INSERT INTO videos (
         upload_user_id, title, description, 
-        video_url, thumbnail_url, views, likes,
+        video_url, thumbnail_url, views,
         created_at
-      ) VALUES (?, ?, ?, ?, ?, 0, 0, NOW())
+      ) VALUES (?, ?, ?, ?, ?, 0, NOW())
     `;
 
     const [result] = await db.query(query, [
@@ -195,8 +195,8 @@ app.get('/api/videos', async (req, res) => {
     
     const videosWithUrls = videos.map(video => ({
       ...video,
-      thumbnail_url: `http://localhost:8000/public${video.thumbnail_url}`,
-      video_url: `http://localhost:8000/public${video.video_url}`,
+      thumbnail_url: video.thumbnail_url,
+      video_url: video.video_url,
       timestamp: new Date(video.created_at).toLocaleDateString()
     }));
 
@@ -207,37 +207,31 @@ app.get('/api/videos', async (req, res) => {
   }
 });
 
-// 비디오 상세 정보 API
-app.get('/api/videos/:id', async (req, res) => {
+// 비디오 상세 정보 조회 API
+app.get('/api/videos/:videoId', async (req, res) => {
   try {
-    const { id } = req.params;
-    console.log('요청된 비디오 ID:', id);  // ID 확인
-
-    const query = `
-      SELECT v.*, u.user_name as channel_name
+    const { videoId } = req.params;
+    
+    const [videos] = await db.query(`
+      SELECT 
+        v.*,
+        u.user_name,
+        u.login_id as channel_name
       FROM videos v
       JOIN users u ON v.upload_user_id = u.user_id
-      WHERE v.id = ?
-    `;
-    
-    const [videos] = await db.query(query, [id]);
-    console.log('조회된 비디오:', videos);  // 쿼리 결과 확인
-    
+      WHERE v.video_id = ?
+    `, [videoId]);
+
     if (videos.length === 0) {
       return res.status(404).json({ message: '비디오를 찾을 수 없습니다.' });
     }
 
-    const video = {
-      ...videos[0],
-      video_url: `http://localhost:8000/public${videos[0].video_url}`,
-      thumbnail_url: `http://localhost:8000/public${videos[0].thumbnail_url}`,
-      timestamp: new Date(videos[0].created_at).toLocaleDateString()
-    };
+    const video = videos[0];
 
     // 조회수 증가
-    await db.query('UPDATE videos SET views = views + 1 WHERE id = ?', [id]);
+    await db.query('UPDATE videos SET views = views + 1 WHERE video_id = ?', [videoId]);
 
-    console.log('응답할 비디오 데이터:', video);  // 최종 응답 데이터 확인
+    console.log('응답할 비디오 데이터:', video);
     res.json(video);
   } catch (error) {
     console.error('비디오 상세 정보 조회 에러:', error);
@@ -252,6 +246,8 @@ app.use((err, req, res, next) => {
 });
 
 // 서버 시작
-app.listen(8000, () => {
-  console.log('서버 실행중 (포트: 8000)');
+const port = 3001;  // 이 부분만 확인
+
+app.listen(port, () => {
+  console.log(`서버가 포트 ${port}에서 실행중입니다.`);
 });

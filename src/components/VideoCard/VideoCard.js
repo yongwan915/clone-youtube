@@ -1,18 +1,14 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import './VideoCard.css';
 import Avatar from '@mui/material/Avatar';
 import PropTypes from 'prop-types';
 
-function VideoCard({ id, image, title, channel, views, timestamp, channelImage }) {
-  const navigate = useNavigate();
-
-  const handleClick = () => {
-    navigate(`/watch/${id}`);
-  };
-
+function VideoCard({ video_id, image, title, channel, views, timestamp, channelImage }) {
+  console.log('VideoCard props:', { video_id, image, title, channel, views, timestamp });
+  
   return (
-    <div className="videoCard" onClick={handleClick}>
+    <Link to={`/watch/${video_id}`} className="videoCard">
       <img className="videoCard__thumbnail" src={image} alt={title} />
       <div className="videoCard__info">
         <Avatar 
@@ -26,12 +22,15 @@ function VideoCard({ id, image, title, channel, views, timestamp, channelImage }
           <p>{views} • {timestamp}</p>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
 VideoCard.propTypes = {
-  id: PropTypes.number.isRequired,
+  video_id: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.number
+  ]).isRequired,
   image: PropTypes.string.isRequired,
   title: PropTypes.string.isRequired,
   channel: PropTypes.string.isRequired,
