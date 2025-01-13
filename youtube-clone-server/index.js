@@ -40,45 +40,40 @@ const testConnection = async () => {
 
 testConnection();
 
-// 업로드 디렉토리 생성 함수
-const createUploadDirectories = () => {
-  const directories = [
-    path.join(__dirname, 'public', 'videos'),
-    path.join(__dirname, 'public', 'thumbnails')
-  ];
+// 업로드 디렉토리 생성
+const uploadDir = path.join(__dirname, 'public');
+const bannersDir = path.join(uploadDir, 'banners');
+const profilesDir = path.join(uploadDir, 'profiles');
 
-  directories.forEach(dir => {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-      console.log(`디렉토리 생성 완료: ${dir}`);
-    }
-  });
-};
+[uploadDir, bannersDir, profilesDir].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
 
-// 서버 시작 시 디렉토리 생성
-createUploadDirectories();
-
-// 비디오와 썸네일 저장을 위한 multer 설정
+// multer 설정
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dest = file.fieldname === 'video' ? 'videos' : 'thumbnails';
-    cb(null, `public/${dest}/`);
+  destination: function (req, file, cb) {
+    const type = req.query.type || req.params.type; 
+    console.log('multer에서 받은 type:', type);
+    
+    const uploadPath = type === 'banner' 
+      ? path.join(__dirname, 'public', 'banners')
+      : path.join(__dirname, 'public', 'profiles');
+      
+    console.log('실제 저장 경로:', uploadPath);
+    cb(null, uploadPath);
   },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + path.extname(file.originalname);
-    cb(null, `${file.fieldname}_${uniqueSuffix}`);
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
   }
 });
 
-const upload = multer({
-  storage,
-  limits: {
-    fileSize: 100 * 1024 * 1024 // 100MB
-  }
-});
+const upload = multer({ storage: storage });
 
 // JWT 비밀키 설정
-const JWT_SECRET = 'your-secret-key';  // 실제로는 환경변수로 관리해야 함
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';  // 환경 변수에서 가져오기
 
 // 회원가입 API
 app.post('/api/signup', async (req, res) => {
@@ -255,31 +250,37 @@ app.get('/api/videos/:videoId', async (req, res) => {
   }
 });
 
-// JWT 인증 미들웨어
+// JWT 토큰 검증 미들웨어
 const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  console.log('받은 토큰:', token); // 디버깅용
-  console.log('JWT_SECRET:', process.env.JWT_SECRET); // 환경변수 확인
-
-  if (!token) {
-    return res.status(401).json({ error: '로그인이 필요합니다.' });
-  }
-
   try {
-    // JWT_SECRET이 undefined인 경우를 체크
-    if (!process.env.JWT_SECRET) {
-      throw new Error('JWT_SECRET이 설정되지 않았습니다.');
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    console.log('받은 토큰:', token);
+
+    if (!token) {
+      return res.status(401).json({ error: '토큰이 없습니다.' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('디코딩된 토큰:', decoded); // 디버깅용
-    req.user = decoded;
-    next();
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+      if (err) {
+        console.error('토큰 검증 에러:', err);
+        if (err.name === 'TokenExpiredError') {
+          return res.status(401).json({ error: '토큰이 만료되었습니다.' });
+        }
+        if (err.name === 'JsonWebTokenError') {
+          return res.status(403).json({ error: '유효하지 않은 토큰입니다.' });
+        }
+        return res.status(403).json({ error: '토큰 검증 실패' });
+      }
+
+      console.log('디코딩된 토큰:', decoded);
+      req.user = decoded;
+      next();
+    });
   } catch (error) {
-    console.error('토큰 검증 실패:', error);
-    return res.status(403).json({ error: '유효하지 않은 토큰입니다.' });
+    console.error('인증 미들웨어 에러:', error);
+    res.status(500).json({ error: '서버 에러' });
   }
 };
 
@@ -439,28 +440,28 @@ app.get('/api/channels/:userId', async (req, res) => {
     const { userId } = req.params;
     console.log('[채널 조회] 요청된 userId:', userId);
     
-    // 구독 테이블 없이 기본 정보만 조회하도록 수정
     const query = `
       SELECT 
         u.user_id,
         u.user_name,
         u.email,
         u.created_at,
+        u.banner_image_url,
+        u.profile_image_url,
+        u.channel_description as description,
         (SELECT COUNT(*) FROM videos WHERE upload_user_id = u.user_id) as video_count,
-        0 as subscriber_count  /* 임시로 0으로 설정 */
+        (SELECT COUNT(*) FROM subscriptions WHERE channel_user_id = u.user_id) as subscriber_count
       FROM users u
       WHERE u.user_id = ?
     `;
     
     const [results] = await db.query(query, [userId]);
-    console.log('[채널 조회] 쿼리 결과:', results);
     
     if (!results || results.length === 0) {
       return res.status(404).json({ error: '채널을 찾을 수 없습니다.' });
     }
 
     res.status(200).json(results[0]);
-    
   } catch (error) {
     console.error('[채널 조회] 에러:', error);
     res.status(500).json({ error: '서버 에러', message: error.message });
@@ -537,6 +538,122 @@ app.post('/api/users/:channelUserId/subscribe', async (req, res) => {
   } catch (error) {
     console.error('구독 처리 중 에러:', error);
     res.status(500).json({ error: '서버 에러' });
+  }
+});
+
+// 채널 구독자 목록 조회 API
+app.get('/api/channels/:channelId/subscribers', async (req, res) => {
+    try {
+        const { channelId } = req.params;
+        console.log('요청된 채널 ID:', channelId);
+        
+        // 먼저 채널이 존재하는지 확인
+        const [channel] = await db.query(
+            'SELECT user_id FROM users WHERE user_id = ?',
+            [channelId]
+        );
+        console.log('채널 조회 결과:', channel);
+
+        if (channel.length === 0) {
+            return res.status(404).json({ error: '채널을 찾을 수 없습니다.' });
+        }
+        
+        const query = `
+            SELECT 
+                u.user_id, 
+                u.user_name,
+                COALESCE(u.profile_image, '/default-profile.png') as profile_image
+            FROM users u
+            INNER JOIN subscriptions s ON u.user_id = s.subscriber_id
+            WHERE s.channel_user_id = ?
+            ORDER BY s.created_at DESC
+        `;
+        
+        console.log('실행될 쿼리:', query);
+        console.log('파라미터:', channelId);
+        
+        const [subscribers] = await db.query(query, [channelId]);
+        console.log('조회된 구독자:', subscribers);
+        
+        // 결과가 비어있어도 빈 배열 반환
+        res.json(subscribers || []);
+    } catch (error) {
+        console.error('구독자 목록 조회 중 상세 에러:', error);
+        res.status(500).json({ 
+            error: '서버 에러', 
+            message: error.message,
+            code: error.code,
+            sqlMessage: error.sqlMessage
+        });
+    }
+});
+
+// 이미지 업로드 API
+app.post('/api/channels/:userId/image/:type', authenticateToken, upload.single('image'), async (req, res) => {
+  try {
+    console.log('파일 업로드 요청:', req.file);
+    console.log('파일 타입:', req.params.type);  // URL 파라미터에서 type 가져오기
+
+    if (!req.file) {
+      return res.status(400).json({ error: '파일이 없습니다.' });
+    }
+
+    const type = req.params.type;  // URL 파라미터에서 type 사용
+    console.log('처리될 타입:', type);
+
+    const uploadPath = type === 'banner' ? 'banners' : 'profiles';
+    const imageUrl = `/public/${uploadPath}/${req.file.filename}`;
+    console.log('최종 이미지 URL:', imageUrl);
+
+    const updateField = type === 'banner' ? 'banner_image_url' : 'profile_image_url';
+    console.log('업데이트될 DB 필드:', updateField);
+    
+    await db.query(
+      `UPDATE users SET ${updateField} = ? WHERE user_id = ?`,
+      [imageUrl, req.params.userId]
+    );
+
+    console.log('DB 업데이트 완료:', imageUrl);
+
+    res.json({ 
+      message: '이미지 업로드 성공',
+      imageUrl 
+    });
+  } catch (error) {
+    console.error('이미지 업로드 에러:', error);
+    res.status(500).json({ error: '이미지 업로드에 실패했습니다.' });
+  }
+});
+
+// 채널 설명 업데이트 API
+app.put('/api/channels/:userId/description', authenticateToken, async (req, res) => {
+  try {
+    console.log('채널 설명 업데이트 요청 받음');
+    console.log('인증된 사용자:', req.user);
+    console.log('요청 userId:', req.params.userId);
+    console.log('요청 바디:', req.body);
+
+    const { userId } = req.params;
+    const { description } = req.body;
+
+    // 권한 체크
+    if (req.user.user_id !== parseInt(userId)) {
+      return res.status(403).json({ error: '권한이 없습니다.' });
+    }
+
+    // DB에 channel_description 컬럼이 있는지 확인하고 없으면 추가
+    await db.query(
+      'UPDATE users SET channel_description = ? WHERE user_id = ?',
+      [description, userId]
+    );
+
+    res.json({ 
+      message: '채널 설명이 업데이트되었습니다.',
+      description 
+    });
+  } catch (error) {
+    console.error('채널 설명 업데이트 에러:', error);
+    res.status(500).json({ error: '채널 설명 업데이트에 실패했습니다.' });
   }
 });
 

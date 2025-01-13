@@ -1,0 +1,306 @@
+.channel {
+    width: 100%;
+    background-color: #fff;
+    flex: 1;
+}
+
+.channel__banner {
+    width: 85%;
+    height: 400px;
+    position: relative;
+    overflow: hidden;
+    background-color: #f8f8f8;
+    max-height: 400px;
+    margin: 0 auto;
+}
+
+.channel__banner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    background-color: #e5e5e5;
+    max-height: 400px;
+    margin: 0 auto;
+}
+
+/* 큰 화면에서 이미지가 과도하게 늘어나는 것을 방지 */
+@media screen and (min-width: 1200px) {
+    .channel__banner {
+        width: 75%;
+    }
+}
+
+.channel__banner.uploadable {
+    cursor: pointer;
+}
+
+.channel__container {
+    padding: 0 24px;
+    width: 100%;
+}
+
+.channel__header {
+    padding: 16px 0;
+}
+
+.channel__info-section {
+    display: flex;
+    gap: 24px;
+}
+
+.channel__profile {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.channel__profile img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.channel__profile.uploadable {
+    cursor: pointer;
+}
+
+.channel__details {
+    padding-top: 20px;
+    flex-grow: 1;
+}
+
+.channel__details h2 {
+    font-size: 24px;
+    font-weight: 500;
+    color: #0f0f0f;
+    margin-bottom: 0;
+}
+
+.channel__meta {
+    margin-top: 4px;
+    color: #606060;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.channel__meta span:first-child {
+    cursor: pointer;
+}
+
+.channel__actions {
+    margin-top: 14px;
+}
+
+.channel__nav {
+    margin-top: 12px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.channel__nav-list {
+    display: flex;
+    gap: 60px;
+    padding: 0;
+    margin: 0;
+}
+
+.channel__nav-list span {
+    padding: 16px 0;
+    font-size: 16px;
+    font-weight: 400;
+    color: #606060;
+    cursor: pointer;
+    position: relative;
+}
+
+.channel__nav-list span.active {
+    color: #0f0f0f;
+}
+
+.channel__nav-list span.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: #0f0f0f;
+}
+
+.uploadable {
+    position: relative;
+    cursor: pointer;
+}
+
+.uploadable:hover .upload-overlay {
+    opacity: 1;
+}
+
+.upload-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.upload-overlay span {
+    color: white;
+    text-align: center;
+    padding: 10px;
+    font-size: 14px;
+}
+
+.uploadable:hover .upload-overlay {
+    opacity: 1;
+}
+
+.channel__profile .upload-overlay {
+    border-radius: 50%;
+}
+
+.upload-overlay input[type="file"] {
+    display: none;
+}
+
+.channel__description-edit {
+    margin-top: 16px;
+}
+
+.channel__description-edit textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    font-size: 14px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.channel__description-edit textarea:focus {
+    outline: none;
+    border-color: #1a73e8;
+}
+
+.description-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.description-actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.description-actions button:first-child {
+    background-color: #1a73e8;
+    color: white;
+}
+
+.description-actions button:last-child {
+    background-color: #f2f2f2;
+    color: #606060;
+}
+
+.channel__description {
+    margin-top: 16px;
+    color: #606060;
+    font-size: 14px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+}
+
+.channel__description:empty::before {
+    content: '채널 설명 추가';
+    color: #606060;
+    cursor: pointer;
+}
+
+.uploadable .upload-overlay {
+    cursor: pointer;
+}
+
+.channel__description {
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.channel__description:hover {
+    background-color: #f0f0f0;
+}
+
+.channel__description-edit textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    resize: vertical;
+}
+
+.description-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.description-actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.description-actions button:first-child {
+    background-color: #065fd4;
+    color: white;
+}
+
+.description-actions button:last-child {
+    background-color: #f2f2f2;
+}
+
+.description-actions button:hover {
+    opacity: 0.9;
+}
+
+.channel__banner .upload-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+    cursor: pointer;
+}
+
+.channel__banner:hover .upload-overlay {
+    opacity: 1;
+}

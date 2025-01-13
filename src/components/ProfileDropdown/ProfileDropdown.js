@@ -2,15 +2,17 @@ import React from 'react';
 import './ProfileDropdown.css';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
+import { useNavigate } from 'react-router-dom';
 
 function ProfileDropdown({ onLogout }) {
   const user = JSON.parse(localStorage.getItem('user'));
+  const navigate = useNavigate();
 
   return (
     <div className="profileDropdown">
       <div className="profileDropdown__header">
         <AccountCircleIcon />
-        <span>{user?.user_name || '사용자'}</span>
+        <span style={{ cursor: 'pointer' }} onClick={() => navigate(`/channel/${user.user_id}`)}>{user?.user_name || '사용자'}</span>
       </div>
       <div 
         className="profileDropdown__option" 

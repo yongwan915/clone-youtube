@@ -20,6 +20,10 @@
   padding: 20px;
 }
 
+.app__mainContent {
+  flex: 1;
+}
+
 body {
   font-family: 'Roboto', sans-serif;
   background-color: #f9f9f9;

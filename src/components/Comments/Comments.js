@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import Avatar from '@mui/material/Avatar';
 import './Comments.css';
 import { API_BASE_URL } from '../../config';
+import { useNavigate } from 'react-router-dom';
 
 function Comments({ videoId }) {
+  const navigate = useNavigate();
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [editingId, setEditingId] = useState(null);
@@ -118,6 +120,7 @@ function Comments({ videoId }) {
         <Avatar 
           src="https://yt3.ggpht.com/ytc/default-avatar.jpg"
           alt={user?.user_name || "사용자"}
+          
         />
         <form onSubmit={handleSubmit}>
           <input
@@ -143,10 +146,15 @@ function Comments({ videoId }) {
             <Avatar 
               src="https://yt3.ggpht.com/ytc/default-avatar.jpg"
               alt={comment.user_name}
+              onClick={() => navigate(`/channel/${comment.user_id}`)}
+              style={{ cursor: 'pointer' }}
             />
             <div className="comment__content">
               <div className="comment__header">
-                <span className="comment__author">{comment.user_name}</span>
+                <span className="comment__author" style={{ cursor: 'pointer' }} onClick={() => navigate(`/channel/${comment.user_id}`)}>
+                  {comment.user_name}
+                  
+                </span>
                 <span className="comment__date">
                   {new Date(comment.created_at).toLocaleDateString()}
                 </span>
