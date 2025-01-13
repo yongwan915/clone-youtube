@@ -36,6 +36,7 @@ function Login() {
       if (response.ok) {
         // 토큰을 로컬 스토리지에 저장
         localStorage.setItem('token', data.token);
+        localStorage.setItem('user_id', data.user.user_id);
         localStorage.setItem('user', JSON.stringify(data.user));
         
         window.location.href = '/';

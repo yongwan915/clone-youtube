@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import VideoCard from '../../components/VideoCard/VideoCard';
 import './Home.css';
+import { API_BASE_URL } from '../../config';
 
 function Home() {
   const [videos, setVideos] = useState([]);
@@ -8,7 +9,7 @@ function Home() {
   useEffect(() => {
     const fetchVideos = async () => {
       try {
-        const response = await fetch('http://localhost:3001/api/videos');
+        const response = await fetch(`${API_BASE_URL}/api/videos`);
         if (!response.ok) {
           throw new Error('서버 에러');
         }
@@ -31,12 +32,13 @@ function Home() {
           <VideoCard
             key={video.video_id}
             video_id={video.video_id}
-            image={`http://localhost:3001/public${video.thumbnail_url}`}
+            image={`${API_BASE_URL}/public${video.thumbnail_url}`}
             title={video.title}
             channel={video.channel_name || video.user_name}
             views={`조회수 ${video.views}회`}
             timestamp={new Date(video.created_at).toLocaleDateString()}
             channelImage="https://yt3.ggpht.com/ytc/default-avatar.jpg"
+            user_id={video.upload_user_id}
           />
         ))}
       </div>

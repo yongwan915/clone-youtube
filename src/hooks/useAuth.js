@@ -14,5 +14,5 @@ export const useAuth = () => {
         window.location.href = '/login';
     };
     
-    return { checkAuth, logout };
+    return { checkAuth, logout, isAuthenticated };
 }; 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSearchParams, Navigate } from 'react-router-dom';
 import './CreateVideo.css';
+import { API_BASE_URL } from '../../config';
 
 function CreateVideo() {
   const [searchParams] = useSearchParams();
@@ -48,7 +49,7 @@ function CreateVideo() {
       formDataToSend.append('description', formData.description);
       formDataToSend.append('upload_user_id', user_id);
 
-      const response = await fetch('http://localhost:8000/api/videos/upload', {
+      const response = await fetch(`${API_BASE_URL}/api/videos/upload`, {
         method: 'POST',
         body: formDataToSend
       });

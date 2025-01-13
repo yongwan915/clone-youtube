@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar/Sidebar';
 import routes from './routes/routes';
 import './App.css';
 import Watch from './pages/Watch/Watch';
+import Channel from './pages/Channel/Channel';
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -27,6 +28,7 @@ function App() {
                 )
               )}
               <Route path="/watch/:videoId" element={<Watch />} />
+              <Route path="/channel/:user_id" element={<Channel />} />
             </Routes>
           </div>
         </div>

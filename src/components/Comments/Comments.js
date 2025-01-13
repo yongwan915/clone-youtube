@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Avatar from '@mui/material/Avatar';
 import './Comments.css';
+import { API_BASE_URL } from '../../config';
 
 function Comments({ videoId }) {
   const [comments, setComments] = useState([]);
@@ -14,7 +15,7 @@ function Comments({ videoId }) {
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        const response = await fetch(`http://localhost:3001/api/videos/${videoId}/comments`);
+        const response = await fetch(`${API_BASE_URL}/api/videos/${videoId}/comments`);
         if (!response.ok) throw new Error('댓글 로딩 실패');
         const data = await response.json();
         setComments(data);
@@ -38,7 +39,7 @@ function Comments({ videoId }) {
     if (!newComment.trim()) return;
 
     try {
-      const response = await fetch(`http://localhost:3001/api/videos/${videoId}/comments`, {
+      const response = await fetch(`${API_BASE_URL}/api/videos/${videoId}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -63,7 +64,7 @@ function Comments({ videoId }) {
     if (!editContent.trim()) return;
 
     try {
-      const response = await fetch(`http://localhost:3001/api/comments/${commentId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/comments/${commentId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -92,7 +93,7 @@ function Comments({ videoId }) {
     if (!window.confirm('정말 이 댓글을 삭제하시겠습니까?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3001/api/comments/${commentId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/comments/${commentId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`

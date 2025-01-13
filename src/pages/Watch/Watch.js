@@ -2,17 +2,25 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import './Watch.css';
 import Comments from '../../components/Comments/Comments';
+import { API_BASE_URL } from '../../config';
+import LikeButton from '../../components/LikeButton/LikeButton';
+import SubscribeButton from '../../components/SubscribeButton/SubscribeButton';
 
 function Watch() {
   const { videoId } = useParams();
   const [video, setVideo] = useState(null);
   const [error, setError] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
 
   useEffect(() => {
     const fetchVideo = async () => {
       try {
         console.log('현재 videoId:', videoId);
-        const response = await fetch(`http://localhost:3001/api/videos/${videoId}`);
+        const response = await fetch(`${API_BASE_URL}/api/videos/${videoId}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
         const data = await response.json();
         
         if (!response.ok) {
@@ -41,7 +49,7 @@ function Watch() {
   if (error) return <div className="watch__error">에러: {error}</div>;
   if (!video) return <div className="watch__loading">로딩중...</div>;
 
-  const fullVideoUrl = `http://localhost:3001/public${video.video_url}`;
+  const fullVideoUrl = `${API_BASE_URL}/public${video.video_url}`;
 
   return (
     <div className="watch">
@@ -60,10 +68,27 @@ function Watch() {
         <h1>{video.title}</h1>
         <div className="watch__stats">
           <span>조회수 {video.views}회</span>
-          <span>• {new Date(video.created_at).toLocaleDateString()}</span>
+          {isLoggedIn ? (
+            <LikeButton 
+              videoId={video.video_id} 
+              initialLiked={video.is_liked}
+              onLikeChange={(liked) => console.log('좋아요 상태:', liked)}
+            />
+          ) : (
+            <button onClick={() => alert('로그인이 필요합니다.')}>좋아요</button>
+          )}
         </div>
         <div className="watch__channel">
-          <h3>{video.channel_name || video.user_name}</h3>
+          <h3>{video.user_name}</h3>
+          {isLoggedIn ? (
+            <SubscribeButton 
+              channelUserId={video.upload_user_id}
+              initialSubscribed={video.is_subscribed}
+              onSubscribeChange={(subscribed) => console.log('구독 상태:', subscribed)}
+            />
+          ) : (
+            <button onClick={() => alert('로그인이 필요합니다.')}>구독</button>
+          )}
           <p>{video.description}</p>
         </div>
       </div>

@@ -13,6 +13,7 @@ import Login from '../pages/Login/Login';
 import SignUp from '../pages/Signup/SignUp';
 import CreateVideo from '../pages/CreateVideo/CreateVideo';
 import Watch from '../pages/Watch/Watch';
+import Channel from '../pages/Channel/Channel';
 
 
 const routes = [
@@ -114,6 +115,12 @@ const routes = [
         path: '/watch/:videoId',
         element: Watch,
         name: '동영상 시청',
+        type: []
+    },
+    {
+        path: '/channel/:userId',
+        element: Channel,
+        name: '채널',
         type: []
     }
 ];

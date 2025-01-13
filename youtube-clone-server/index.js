@@ -211,15 +211,32 @@ app.get('/api/videos', async (req, res) => {
 app.get('/api/videos/:videoId', async (req, res) => {
   try {
     const { videoId } = req.params;
+    let userId = null;
+
+    // 토큰이 있으면 사용자 정보 가져오기
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
     
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        userId = decoded.user_id;
+      } catch (error) {
+        console.error('토큰 검증 실패:', error);
+      }
+    }
+
     const [videos] = await db.query(`
       SELECT 
         v.*,
-        u.user_name as channel_name
+        u.user_name,
+        ${userId ? '(SELECT COUNT(*) > 0 FROM likes WHERE video_id = v.video_id AND user_id = ?) as is_liked,' : 'FALSE as is_liked,'}
+        ${userId ? '(SELECT COUNT(*) > 0 FROM subscriptions WHERE channel_user_id = v.upload_user_id AND subscriber_id = ?) as is_subscribed,' : 'FALSE as is_subscribed,'}
+        (SELECT COUNT(*) FROM likes WHERE video_id = v.video_id) as like_count
       FROM videos v
       JOIN users u ON v.upload_user_id = u.user_id
       WHERE v.video_id = ?
-    `, [videoId]);
+    `, userId ? [userId, videoId] : [videoId]);
 
     if (videos.length === 0) {
       return res.status(404).json({ message: '비디오를 찾을 수 없습니다.' });
@@ -243,17 +260,27 @@ const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
+  console.log('받은 토큰:', token); // 디버깅용
+  console.log('JWT_SECRET:', process.env.JWT_SECRET); // 환경변수 확인
+
   if (!token) {
-    return res.status(401).json({ message: '인증 토큰이 필요합니다.' });
+    return res.status(401).json({ error: '로그인이 필요합니다.' });
   }
 
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ message: '유효하지 않은 토큰입니다.' });
+  try {
+    // JWT_SECRET이 undefined인 경우를 체크
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET이 설정되지 않았습니다.');
     }
-    req.user = user;
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('디코딩된 토큰:', decoded); // 디버깅용
+    req.user = decoded;
     next();
-  });
+  } catch (error) {
+    console.error('토큰 검증 실패:', error);
+    return res.status(403).json({ error: '유효하지 않은 토큰입니다.' });
+  }
 };
 
 // 댓글 목록 조회 API
@@ -403,6 +430,113 @@ app.delete('/api/comments/:commentId', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('댓글 삭제 에러:', error);
     res.status(500).json({ message: '서버 에러' });
+  }
+});
+
+// 채널(유저) 정보 조회 API
+app.get('/api/channels/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log('[채널 조회] 요청된 userId:', userId);
+    
+    // 구독 테이블 없이 기본 정보만 조회하도록 수정
+    const query = `
+      SELECT 
+        u.user_id,
+        u.user_name,
+        u.email,
+        u.created_at,
+        (SELECT COUNT(*) FROM videos WHERE upload_user_id = u.user_id) as video_count,
+        0 as subscriber_count  /* 임시로 0으로 설정 */
+      FROM users u
+      WHERE u.user_id = ?
+    `;
+    
+    const [results] = await db.query(query, [userId]);
+    console.log('[채널 조회] 쿼리 결과:', results);
+    
+    if (!results || results.length === 0) {
+      return res.status(404).json({ error: '채널을 찾을 수 없습니다.' });
+    }
+
+    res.status(200).json(results[0]);
+    
+  } catch (error) {
+    console.error('[채널 조회] 에러:', error);
+    res.status(500).json({ error: '서버 에러', message: error.message });
+  }
+});
+
+// 좋아요 추가/취소 API
+app.post('/api/videos/:videoId/like', async (req, res) => {
+  try {
+    const { videoId } = req.params;
+    const { user_id } = req.body;  // 클라이언트에서 user_id 전달
+
+    if (!user_id) {
+      return res.status(400).json({ error: '로그인이 필요합니다.' });
+    }
+
+    // 이미 좋아요 했는지 확인
+    const [existingLike] = await db.query(
+      'SELECT * FROM likes WHERE user_id = ? AND video_id = ?',
+      [user_id, videoId]
+    );
+
+    if (existingLike.length > 0) {
+      await db.query(
+        'DELETE FROM likes WHERE user_id = ? AND video_id = ?',
+        [user_id, videoId]
+      );
+      res.json({ message: '좋아요가 취소되었습니다.', liked: false });
+    } else {
+      await db.query(
+        'INSERT INTO likes (user_id, video_id) VALUES (?, ?)',
+        [user_id, videoId]
+      );
+      res.json({ message: '좋아요가 추가되었습니다.', liked: true });
+    }
+  } catch (error) {
+    console.error('좋아요 처리 중 에러:', error);
+    res.status(500).json({ error: '서버 에러' });
+  }
+});
+
+// 구독/구독취소 API
+app.post('/api/users/:channelUserId/subscribe', async (req, res) => {
+  try {
+    const { channelUserId } = req.params;
+    const { user_id: subscriberId } = req.body;  // 클라이언트에서 user_id 전달
+
+    if (!subscriberId) {
+      return res.status(400).json({ error: '로그인이 필요합니다.' });
+    }
+
+    if (Number(channelUserId) === subscriberId) {
+      return res.status(400).json({ error: '자기 자신을 구독할 수 없습니다.' });
+    }
+
+    const [existingSub] = await db.query(
+      'SELECT * FROM subscriptions WHERE subscriber_id = ? AND channel_user_id = ?',
+      [subscriberId, channelUserId]
+    );
+
+    if (existingSub.length > 0) {
+      await db.query(
+        'DELETE FROM subscriptions WHERE subscriber_id = ? AND channel_user_id = ?',
+        [subscriberId, channelUserId]
+      );
+      return res.json({ message: '구독이 취소되었습니다.', subscribed: false });
+    } else {
+      await db.query(
+        'INSERT INTO subscriptions (subscriber_id, channel_user_id) VALUES (?, ?)',
+        [subscriberId, channelUserId]
+      );
+      return res.json({ message: '구독이 추가되었습니다.', subscribed: true });
+    }
+  } catch (error) {
+    console.error('구독 처리 중 에러:', error);
+    res.status(500).json({ error: '서버 에러' });
   }
 });
 
