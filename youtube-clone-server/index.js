@@ -44,24 +44,22 @@ testConnection();
 const uploadDir = path.join(__dirname, 'public');
 const bannersDir = path.join(uploadDir, 'banners');
 const profilesDir = path.join(uploadDir, 'profiles');
+const thumbnailsDir = path.join(uploadDir, 'thumbnails');
+const videosDir = path.join(uploadDir, 'videos');
 
-[uploadDir, bannersDir, profilesDir].forEach(dir => {
+[uploadDir, bannersDir, profilesDir, thumbnailsDir, videosDir].forEach(dir => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
 });
 
-// multer 설정
-const storage = multer.diskStorage({
+// 프로필/배너용 multer 설정
+const imageStorage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const type = req.query.type || req.params.type; 
-    console.log('multer에서 받은 type:', type);
-    
+    const type = req.params.type;
     const uploadPath = type === 'banner' 
       ? path.join(__dirname, 'public', 'banners')
       : path.join(__dirname, 'public', 'profiles');
-      
-    console.log('실제 저장 경로:', uploadPath);
     cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
@@ -70,10 +68,52 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ storage: storage });
+// 비디오/썸네일용 multer 설정
+const videoStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadPath = file.fieldname === 'video'
+      ? path.join(__dirname, 'public', 'videos')
+      : path.join(__dirname, 'public', 'thumbnails');
+    cb(null, uploadPath);
+  },
+  filename: function (req, file, cb) {
+    // 파일 확장자 추출 및 소문자 변환
+    const ext = path.extname(file.originalname).toLowerCase();
+    // 이미지 파일 형식 검사 (썸네일의 경우)
+    if (file.fieldname === 'thumbnail') {
+      if (!['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) {
+        return cb(new Error('지원하지 않는 이미지 형식입니다.'));
+      }
+    }
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + ext);
+  }
+});
+
+const uploadImage = multer({ storage: imageStorage });
+const uploadVideo = multer({ storage: videoStorage });
 
 // JWT 비밀키 설정
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';  // 환경 변수에서 가져오기
+
+// JWT에서 user_id를 추출하는 함수 추가
+function getUserIdFromToken(authHeader) {
+    if (!authHeader) return null;  // 토큰이 없으면 null 반환
+    
+    try {
+        // Bearer 토큰 형식 체크
+        if (!authHeader.startsWith('Bearer ')) return null;
+        
+        const token = authHeader.split(' ')[1];
+        if (!token) return null;  // 토큰이 비어있으면 null 반환
+        
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+        return decoded.user_id;
+    } catch (error) {
+        console.error('토큰 검증 실패:', error);
+        return null;  // 토큰 검증 실패시 null 반환
+    }
+}
 
 // 회원가입 API
 app.post('/api/signup', async (req, res) => {
@@ -140,14 +180,14 @@ app.post('/api/login', async (req, res) => {
 });
 
 // 비디오 업로드 API
-app.post('/api/videos/upload', upload.fields([
+app.post('/api/videos/upload', uploadVideo.fields([
   { name: 'video', maxCount: 1 },
   { name: 'thumbnail', maxCount: 1 }
 ]), async (req, res) => {
   try {
     const { title, description, upload_user_id } = req.body;
-    const videoPath = `/videos/${req.files.video[0].filename}`;
-    const thumbnailPath = `/thumbnails/${req.files.thumbnail[0].filename}`;
+    const videoPath = `/public/videos/${req.files.video[0].filename}`;
+    const thumbnailPath = `/public/thumbnails/${req.files.thumbnail[0].filename}`;
 
     const query = `
       INSERT INTO videos (
@@ -162,91 +202,113 @@ app.post('/api/videos/upload', upload.fields([
       title,
       description,
       videoPath,
-      thumbnailPath
+      thumbnailPath,
+      0
     ]);
 
-    res.status(200).json({ 
-      message: '업로드 성공',
-      videoPath,
-      thumbnailPath
+    res.json({ 
+      message: '동영상 업로드 성공',
+      video_id: result.insertId 
     });
   } catch (error) {
-    console.error('업로드 에러:', error);
-    res.status(500).json({ message: '서버 에러' });
+    console.error('동영상 업로드 에러:', error);
+    res.status(500).json({ error: '동영상 업로드에 실패했습니다.' });
   }
 });
 
-// 비디오 목록 조회 API
+// 비디오 목록 가져오기 API
 app.get('/api/videos', async (req, res) => {
   try {
     const query = `
-      SELECT v.*, u.user_name as channel_name
+      SELECT 
+        v.*,
+        u.user_name,
+        u.profile_image_url,
+        (SELECT COUNT(*) FROM likes WHERE video_id = v.video_id) as likes_count,
+        v.views as views
       FROM videos v
       JOIN users u ON v.upload_user_id = u.user_id
       ORDER BY v.created_at DESC
     `;
     
     const [videos] = await db.query(query);
-    
-    const videosWithUrls = videos.map(video => ({
-      ...video,
-      thumbnail_url: video.thumbnail_url,
-      video_url: video.video_url,
-      timestamp: new Date(video.created_at).toLocaleDateString()
-    }));
-
-    res.json(videosWithUrls);
+    res.json(videos);
   } catch (error) {
     console.error('비디오 목록 조회 에러:', error);
-    res.status(500).json({ message: '서버 에러' });
+    res.status(500).json({ error: '서버 에러' });
   }
 });
 
-// 비디오 상세 정보 조회 API
-app.get('/api/videos/:videoId', async (req, res) => {
+// 검색 API를 먼저 정의
+app.get('/api/videos/search', async (req, res) => {
   try {
-    const { videoId } = req.params;
-    let userId = null;
-
-    // 토큰이 있으면 사용자 정보 가져오기
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    const { q } = req.query;
+    console.log('검색어:', q);
     
-    if (token) {
-      try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        userId = decoded.user_id;
-      } catch (error) {
-        console.error('토큰 검증 실패:', error);
-      }
+    if (!q) {
+      return res.status(400).json({ error: '검색어를 입력해주세요.' });
     }
 
-    const [videos] = await db.query(`
+    const query = `
       SELECT 
         v.*,
         u.user_name,
-        ${userId ? '(SELECT COUNT(*) > 0 FROM likes WHERE video_id = v.video_id AND user_id = ?) as is_liked,' : 'FALSE as is_liked,'}
-        ${userId ? '(SELECT COUNT(*) > 0 FROM subscriptions WHERE channel_user_id = v.upload_user_id AND subscriber_id = ?) as is_subscribed,' : 'FALSE as is_subscribed,'}
-        (SELECT COUNT(*) FROM likes WHERE video_id = v.video_id) as like_count
+        u.profile_image_url,
+        (SELECT COUNT(*) FROM likes WHERE video_id = v.video_id) as likes_count
+      FROM videos v
+      JOIN users u ON v.upload_user_id = u.user_id
+      WHERE 
+        LOWER(v.title) LIKE LOWER(?) OR 
+        LOWER(v.description) LIKE LOWER(?) OR 
+        LOWER(u.user_name) LIKE LOWER(?)
+      ORDER BY 
+        v.created_at DESC
+    `;
+
+    const searchTerm = `%${q}%`;
+    const [videos] = await db.query(query, [searchTerm, searchTerm, searchTerm]);
+    
+    console.log('검색 결과:', videos.length, '개 발견');
+    return res.json(videos);
+  } catch (error) {
+    console.error('비디오 검색 에러:', error);
+    return res.status(500).json({ error: '서버 에러' });
+  }
+});
+
+// 그 다음에 비디오 상세 API 정의
+app.get('/api/videos/:videoId', async (req, res) => {
+  try {
+    const { videoId } = req.params;
+    const userId = req.headers.authorization ? getUserIdFromToken(req.headers.authorization) : null;
+
+    let query = `
+      SELECT 
+        v.*,
+        u.user_name,
+        u.profile_image_url,
+        (SELECT COUNT(*) FROM likes WHERE video_id = v.video_id) as likes_count,
+        ${userId ? `(SELECT COUNT(*) > 0 FROM likes WHERE video_id = v.video_id AND user_id = ?) as is_liked,` : 'FALSE as is_liked,'}
+        ${userId ? `(SELECT COUNT(*) > 0 FROM subscriptions WHERE subscriber_id = ? AND channel_user_id = v.upload_user_id) as is_subscribed` : 'FALSE as is_subscribed'}
       FROM videos v
       JOIN users u ON v.upload_user_id = u.user_id
       WHERE v.video_id = ?
-    `, userId ? [userId, videoId] : [videoId]);
+    `;
 
-    if (videos.length === 0) {
-      return res.status(404).json({ message: '비디오를 찾을 수 없습니다.' });
+    const queryParams = userId ? [userId, userId, videoId] : [videoId];
+    const [video] = await db.query(query, queryParams);
+    
+    if (!video || video.length === 0) {
+      return res.status(404).json({ error: '비디오를 찾을 수 없습니다.' });
     }
 
-    const video = videos[0];
+    video[0].is_liked = !!video[0].is_liked;
+    video[0].is_subscribed = !!video[0].is_subscribed;
 
-    // 조회수 증가
-    await db.query('UPDATE videos SET views = views + 1 WHERE video_id = ?', [videoId]);
-
-    console.log('응답할 비디오 데이터:', video);
-    res.json(video);
+    res.json(video[0]);
   } catch (error) {
-    console.error('비디오 상세 정보 조회 에러:', error);
-    res.status(500).json({ message: '서버 에러' });
+    console.error('비디오 조회 에러:', error);
+    res.status(500).json({ error: '서버 에러' });
   }
 });
 
@@ -288,39 +350,22 @@ const authenticateToken = (req, res, next) => {
 app.get('/api/videos/:videoId/comments', async (req, res) => {
   try {
     const { videoId } = req.params;
-    console.log('댓글 조회 요청:', videoId);
-    
-    const [comments] = await db.query(`
+    const query = `
       SELECT 
-        c.comment_id,
-        c.video_id,
-        c.user_id,
-        c.content,
-        c.created_at,
-        c.updated_at,
-        u.user_name
+        c.*,
+        u.user_name,
+        u.profile_image_url
       FROM comments c
-      LEFT JOIN users u ON c.user_id = u.user_id
+      JOIN users u ON c.user_id = u.user_id
       WHERE c.video_id = ?
       ORDER BY c.created_at DESC
-    `, [videoId]);
+    `;
 
-    console.log('조회된 댓글 수:', comments.length);
+    const [comments] = await db.query(query, [videoId]);
     res.json(comments);
-
   } catch (error) {
-    // 자세한 에러 로깅
-    console.error('댓글 목록 조회 중 에러 발생:', {
-      error: error.message,
-      stack: error.stack,
-      sqlMessage: error.sqlMessage,
-      sqlState: error.sqlState
-    });
-
-    res.status(500).json({ 
-      message: '서버 에러가 발생했습니다.',
-      error: error.message 
-    });
+    console.error('댓글 목록 조회 실패:', error);
+    res.status(500).json({ error: '댓글 목록을 가져오는데 실패했습니다.' });
   }
 });
 
@@ -450,7 +495,7 @@ app.get('/api/channels/:userId', async (req, res) => {
         u.profile_image_url,
         u.channel_description as description,
         (SELECT COUNT(*) FROM videos WHERE upload_user_id = u.user_id) as video_count,
-        (SELECT COUNT(*) FROM subscriptions WHERE channel_user_id = u.user_id) as subscriber_count
+        COALESCE((SELECT COUNT(*) FROM subscriptions WHERE channel_user_id = u.user_id), 0) as subscriber_count
       FROM users u
       WHERE u.user_id = ?
     `;
@@ -461,7 +506,12 @@ app.get('/api/channels/:userId', async (req, res) => {
       return res.status(404).json({ error: '채널을 찾을 수 없습니다.' });
     }
 
-    res.status(200).json(results[0]);
+    // DB에 이미 /public이 포함되어 있으므로 그대로 사용
+    const channelData = {
+      ...results[0]
+    };
+
+    res.status(200).json(channelData);
   } catch (error) {
     console.error('[채널 조회] 에러:', error);
     res.status(500).json({ error: '서버 에러', message: error.message });
@@ -545,51 +595,40 @@ app.post('/api/users/:channelUserId/subscribe', async (req, res) => {
 app.get('/api/channels/:channelId/subscribers', async (req, res) => {
     try {
         const { channelId } = req.params;
-        console.log('요청된 채널 ID:', channelId);
         
-        // 먼저 채널이 존재하는지 확인
         const [channel] = await db.query(
             'SELECT user_id FROM users WHERE user_id = ?',
             [channelId]
         );
-        console.log('채널 조회 결과:', channel);
 
         if (channel.length === 0) {
             return res.status(404).json({ error: '채널을 찾을 수 없습니다.' });
         }
-        
+
         const query = `
             SELECT 
                 u.user_id, 
                 u.user_name,
-                COALESCE(u.profile_image, '/default-profile.png') as profile_image
+                COALESCE(u.profile_image_url, '/default-profile.png') as profile_image_url
             FROM users u
             INNER JOIN subscriptions s ON u.user_id = s.subscriber_id
             WHERE s.channel_user_id = ?
             ORDER BY s.created_at DESC
         `;
         
-        console.log('실행될 쿼리:', query);
-        console.log('파라미터:', channelId);
-        
         const [subscribers] = await db.query(query, [channelId]);
-        console.log('조회된 구독자:', subscribers);
-        
-        // 결과가 비어있어도 빈 배열 반환
         res.json(subscribers || []);
     } catch (error) {
         console.error('구독자 목록 조회 중 상세 에러:', error);
         res.status(500).json({ 
             error: '서버 에러', 
-            message: error.message,
-            code: error.code,
-            sqlMessage: error.sqlMessage
+            message: error.message
         });
     }
 });
 
-// 이미지 업로드 API
-app.post('/api/channels/:userId/image/:type', authenticateToken, upload.single('image'), async (req, res) => {
+// 프로필/배너 업로드 API
+app.post('/api/channels/:userId/image/:type', authenticateToken, uploadImage.single('image'), async (req, res) => {
   try {
     console.log('파일 업로드 요청:', req.file);
     console.log('파일 타입:', req.params.type);  // URL 파라미터에서 type 가져오기
@@ -654,6 +693,18 @@ app.put('/api/channels/:userId/description', authenticateToken, async (req, res)
   } catch (error) {
     console.error('채널 설명 업데이트 에러:', error);
     res.status(500).json({ error: '채널 설명 업데이트에 실패했습니다.' });
+  }
+});
+
+// 비디오 조회수 증가 API
+app.post('/api/videos/:videoId/view', async (req, res) => {
+  try {
+    const { videoId } = req.params;
+    await db.query('UPDATE videos SET views = views + 1 WHERE video_id = ?', [videoId]);
+    res.json({ message: '조회수가 증가되었습니다.' });
+  } catch (error) {
+    console.error('조회수 증가 에러:', error);
+    res.status(500).json({ error: '서버 에러' });
   }
 });
 

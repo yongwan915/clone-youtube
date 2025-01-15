@@ -4,17 +4,15 @@ import './VideoCard.css';
 import Avatar from '@mui/material/Avatar';
 import PropTypes from 'prop-types';
 
-function VideoCard({ video_id, image, title, channel, views, timestamp, channelImage, user_id }) {
+
+function VideoCard({ video_id, image, title, channel, views, timestamp, channelImage, user_id, likes }) {
   const navigate = useNavigate();
 
-  // 채널 클릭 이벤트 핸들러
   const handleChannelClick = (e) => {
-    e.preventDefault(); // 비디오 카드 전체 클릭 이벤트 방지
-    e.stopPropagation(); // 이벤트 버블링 방지
+    e.preventDefault();
+    e.stopPropagation();
     navigate(`/channel/${user_id}`);
   };
-
-  console.log('VideoCard props:', { video_id, image, title, channel, views, timestamp });
   
   return (
     <Link to={`/watch/${video_id}`} className="videoCard">
@@ -26,6 +24,9 @@ function VideoCard({ video_id, image, title, channel, views, timestamp, channelI
           src={channelImage}
           onClick={handleChannelClick}
           style={{ cursor: 'pointer' }}
+          onError={(e) => {
+            e.target.src = "https://yt3.ggpht.com/ytc/default-avatar.jpg";
+          }}
         />
         <div className="videoCard__text">
           <h4>{title}</h4>
@@ -54,7 +55,8 @@ VideoCard.propTypes = {
   views: PropTypes.string.isRequired,
   timestamp: PropTypes.string.isRequired,
   channelImage: PropTypes.string.isRequired,
-  user_id: PropTypes.string.isRequired
+  user_id: PropTypes.string.isRequired,
+  likes: PropTypes.number.isRequired
 };
 
 export default VideoCard; 

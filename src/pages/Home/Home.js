@@ -32,13 +32,16 @@ function Home() {
           <VideoCard
             key={video.video_id}
             video_id={video.video_id}
-            image={`${API_BASE_URL}/public${video.thumbnail_url}`}
+            image={`${API_BASE_URL}${video.thumbnail_url}`}
             title={video.title}
             channel={video.channel_name || video.user_name}
             views={`조회수 ${video.views}회`}
             timestamp={new Date(video.created_at).toLocaleDateString()}
-            channelImage="https://yt3.ggpht.com/ytc/default-avatar.jpg"
+            channelImage={video.profile_image_url 
+              ? `${API_BASE_URL}${video.profile_image_url}` 
+              : "https://yt3.ggpht.com/ytc/default-avatar.jpg"}
             user_id={video.upload_user_id}
+            likes={video.likes_count}
           />
         ))}
       </div>

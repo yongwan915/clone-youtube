@@ -1,12 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../../config';
 import './Subscribers.css';
 
 function Subscribers({ subscribers = [], onClose }) {
     const navigate = useNavigate();
 
     const handleModalClick = (e) => {
-        // 모달 바깥 영역 클릭 시 닫기
         if (e.target.className === 'subscribers__modal') {
             onClose();
         }
@@ -33,9 +33,15 @@ function Subscribers({ subscribers = [], onClose }) {
                                 className="subscriber"
                                 onClick={() => navigate(`/channel/${subscriber.user_id}`)}
                             >
-                             <img 
-                                    src={subscriber.profile_image_url || '/default-profile.png'} 
-                                    alt={subscriber.user_name} 
+                                <img 
+                                    src={subscriber.profile_image_url ? 
+                                        `${API_BASE_URL}${subscriber.profile_image_url}` : 
+                                        '/default-profile.png'
+                                    } 
+                                    alt={subscriber.user_name}
+                                    onError={(e) => {
+                                        e.target.src = '/default-profile.png';
+                                    }}
                                 />
                                 <span>{subscriber.user_name}</span>
                             </div>

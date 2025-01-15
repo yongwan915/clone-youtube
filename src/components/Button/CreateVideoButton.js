@@ -10,8 +10,8 @@ function CreateVideoButton({ isLoggedIn }) {
 
   return isLoggedIn ? (
     <Link to={`/create-video?user_id=${user_id}`} className="create-video-button">
-      <VideoLibraryIcon />
-      동영상 업로드
+      <VideoLibraryIcon className="create-video-icon" />
+      <span className="create-video-text">동영상 업로드</span>
     </Link>
   ) : null;
 }

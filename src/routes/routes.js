@@ -14,6 +14,7 @@ import SignUp from '../pages/Signup/SignUp';
 import CreateVideo from '../pages/CreateVideo/CreateVideo';
 import Watch from '../pages/Watch/Watch';
 import Channel from '../pages/Channel/Channel';
+import SearchResults from '../pages/SearchResults/SearchResults';
 
 
 const routes = [
@@ -121,6 +122,12 @@ const routes = [
         path: '/channel/:userId',
         element: Channel,
         name: '채널',
+        type: []
+    },
+    {
+        path: '/search',
+        element: SearchResults,
+        name: '검색 결과',
         type: []
     }
 ];

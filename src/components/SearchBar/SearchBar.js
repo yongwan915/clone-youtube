@@ -10,7 +10,8 @@ function SearchBar() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (searchTerm.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchTerm)}`);
+      navigate(`/search?q=${encodeURIComponent(searchTerm.trim())}`);
+      setSearchTerm('');
     }
   };
 
@@ -21,6 +22,7 @@ function SearchBar() {
         placeholder="검색"
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
+        className="searchBar__input"
       />
       <button type="submit" className="searchBar__button">
         <SearchIcon />

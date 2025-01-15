@@ -144,7 +144,9 @@ function Comments({ videoId }) {
         {comments.map(comment => (
           <div key={comment.comment_id} className="comment">
             <Avatar 
-              src="https://yt3.ggpht.com/ytc/default-avatar.jpg"
+              src={comment.profile_image_url 
+                ? `${API_BASE_URL}${comment.profile_image_url}` 
+                : "https://yt3.ggpht.com/ytc/default-avatar.jpg"}
               alt={comment.user_name}
               onClick={() => navigate(`/channel/${comment.user_id}`)}
               style={{ cursor: 'pointer' }}

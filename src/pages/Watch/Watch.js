@@ -11,6 +11,8 @@ function Watch() {
   const [video, setVideo] = useState(null);
   const [error, setError] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
+  const [likesCount, setLikesCount] = useState(0);
+  const [viewCounted, setViewCounted] = useState(false);
 
   useEffect(() => {
     const fetchVideo = async () => {
@@ -41,6 +43,12 @@ function Watch() {
     }
   }, [videoId]);
 
+  useEffect(() => {
+    if (video) {
+      setLikesCount(video.likes_count);
+    }
+  }, [video]);
+
   console.log('Watch 컴포넌트 렌더링:', { videoId, video, error });
 
   if (!videoId) {
@@ -49,7 +57,25 @@ function Watch() {
   if (error) return <div className="watch__error">에러: {error}</div>;
   if (!video) return <div className="watch__loading">로딩중...</div>;
 
-  const fullVideoUrl = `${API_BASE_URL}/public${video.video_url}`;
+  const fullVideoUrl = `${API_BASE_URL}${video.video_url}`;
+
+  const handleLikeChange = (liked) => {
+    console.log('좋아요 상태:', liked);
+    setLikesCount(prevCount => liked ? prevCount + 1 : prevCount - 1);
+  };
+
+  const handleVideoPlay = async () => {
+    if (viewCounted) return;
+    
+    try {
+      await fetch(`${API_BASE_URL}/api/videos/${videoId}/view`, {
+        method: 'POST'
+      });
+      setViewCounted(true);
+    } catch (error) {
+      console.error('조회수 증가 실패:', error);
+    }
+  };
 
   return (
     <div className="watch">
@@ -59,6 +85,7 @@ function Watch() {
           autoPlay
           className="video-player"
           src={fullVideoUrl}
+          onPlay={handleVideoPlay}
         >
           <source src={fullVideoUrl} type="video/mp4" />
           브라우저가 비디오 재생을 지원하지 않습니다.
@@ -68,15 +95,23 @@ function Watch() {
         <h1>{video.title}</h1>
         <div className="watch__stats">
           <span>조회수 {video.views}회</span>
-          {isLoggedIn ? (
-            <LikeButton 
-              videoId={video.video_id} 
-              initialLiked={video.is_liked}
-              onLikeChange={(liked) => console.log('좋아요 상태:', liked)}
-            />
-          ) : (
-            <button onClick={() => alert('로그인이 필요합니다.')}>좋아요</button>
-          )}
+          <div className="watch__likes">
+            {isLoggedIn ? (
+              <>
+                <LikeButton 
+                  videoId={video.video_id} 
+                  initialLiked={video.is_liked}
+                  onLikeChange={handleLikeChange}
+                />
+                <span className="likes-count">좋아요 {likesCount}개</span>
+              </>
+            ) : (
+              <>
+                <button onClick={() => alert('로그인이 필요합니다.')}>좋아요</button>
+                <span className="likes-count">좋아요 {likesCount}개</span>
+              </>
+            )}
+          </div>
         </div>
         <div className="watch__channel">
           <h3>{video.user_name}</h3>

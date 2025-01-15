@@ -162,7 +162,8 @@ function Channel() {
         <img 
           src={channelInfo.banner_image_url ? 
             `${API_BASE_URL}${channelInfo.banner_image_url}` : 
-            '/default-banner.png'} 
+            '/default-banner.png'
+          } 
           alt="채널 배너" 
           onError={(e) => {
             console.log('배너 이미지 URL:', e.target.src);
@@ -192,7 +193,8 @@ function Channel() {
               <img 
                 src={channelInfo.profile_image_url ? 
                   `${API_BASE_URL}${channelInfo.profile_image_url}` : 
-                  '/default-profile.png'} 
+                  '/default-profile.png'
+                } 
                 alt="프로필 이미지" 
                 onError={(e) => {
                   console.log('프로필 이미지 URL:', e.target.src);
