@@ -1,10 +1,11 @@
 import React from 'react';
 import './Music.css';
+import TitleText from '../../components/Text/TitleText';
 
 function Music() {
   return (
     <div className="music">
-      <h2>음악</h2>
+      <TitleText text="음악" />
     </div>
   );
 }

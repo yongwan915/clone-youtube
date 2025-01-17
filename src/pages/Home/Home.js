@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import VideoCard from '../../components/VideoCard/VideoCard';
 import './Home.css';
 import { API_BASE_URL } from '../../config';
-
+import TitleText from '../../components/Text/TitleText';
 function Home() {
   const [videos, setVideos] = useState([]);
 
@@ -26,7 +26,7 @@ function Home() {
 
   return (
     <div className="home">
-      <h2 className="home__title">추천 동영상</h2>
+      <TitleText className="home__title" text="추천 동영상" />
       <div className="home__videos">
         {videos.map((video) => (
           <VideoCard

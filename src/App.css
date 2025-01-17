@@ -22,6 +22,7 @@
 
 .app__mainContent {
   flex: 1;
+  padding: 50px 70px;
 }
 
 body {

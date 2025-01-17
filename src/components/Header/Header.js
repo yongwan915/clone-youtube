@@ -9,14 +9,14 @@ import SettingBar from '../SettingBar/SettingBar';
 import ProfileDropdown from '../ProfileDropdown/ProfileDropdown';
 import LoginButton from '../Button/LoginButton';
 import CreateVideoButton from '../Button/CreateVideoButton';
-
+import { useNavigate } from 'react-router-dom';
 function Header({ onMenuClick }) {
   const [showSettings, setShowSettings] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const settingsRef = useRef(null);
   const profileRef = useRef(null);
   const isLoggedIn = localStorage.getItem('token');
-
+  const navigate = useNavigate();
   useEffect(() => {
     const handleClickOutside = (event) => {
       // 설정 메뉴 외부 클릭 감지
@@ -50,13 +50,12 @@ function Header({ onMenuClick }) {
     <div className="header">
       <div className="header__left">
         <MenuIcon className="header__menuIcon" onClick={onMenuClick} />
-        <Link to="/">
           <img
             className="header__logo"
             src="https://upload.wikimedia.org/wikipedia/commons/b/b8/YouTube_Logo_2017.svg"
             alt="YouTube Logo"
+            onClick={() => navigate('/')}
           />
-        </Link>
       </div>
 
       <div className="header__center">

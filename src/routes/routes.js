@@ -15,7 +15,7 @@ import CreateVideo from '../pages/CreateVideo/CreateVideo';
 import Watch from '../pages/Watch/Watch';
 import Channel from '../pages/Channel/Channel';
 import SearchResults from '../pages/SearchResults/SearchResults';
-
+import You from '../pages/You/You';
 
 const routes = [
     {
@@ -40,8 +40,8 @@ const routes = [
         type: ['sidebar-divider']
     },
     {
-        path: '/myvideos',
-        element: MyVideos,
+        path: '/you',
+        element: You,
         name: '내 페이지',
         type: ['sidebar']
     },

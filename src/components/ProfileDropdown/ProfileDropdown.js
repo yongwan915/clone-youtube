@@ -10,9 +10,9 @@ function ProfileDropdown({ onLogout }) {
 
   return (
     <div className="profileDropdown">
-      <div className="profileDropdown__header">
+      <div className="profileDropdown__header" style={{ cursor: 'pointer' }} onClick={() => navigate(`/channel/${user.user_id}`)}>
         <AccountCircleIcon />
-        <span style={{ cursor: 'pointer' }} onClick={() => navigate(`/channel/${user.user_id}`)}>{user?.user_name || '사용자'}</span>
+        <span >{user?.user_name || '사용자'}</span>
       </div>
       <div 
         className="profileDropdown__option" 

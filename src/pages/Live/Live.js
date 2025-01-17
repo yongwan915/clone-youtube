@@ -1,10 +1,11 @@
 import React from 'react';
 import './Live.css';
+import TitleText from '../../components/Text/TitleText';
 
 function Live() {
   return (
     <div className="live">
-      <h2>실시간</h2>
+      <TitleText text="실시간" />
     </div>
   );
 }

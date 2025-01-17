@@ -1,11 +1,13 @@
 import React from 'react';
 import './Trending.css';
+import TitleText from '../../components/Text/TitleText';
 
 function Trending() {
   return (
     <div className="trending">
-      <h2>인기 동영상</h2>
+      <TitleText text="인기 동영상" />
     </div>
+    
   );
 }
 

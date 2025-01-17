@@ -1,10 +1,11 @@
 import React from 'react';
 import './Sports.css';
+import TitleText from '../../components/Text/TitleText';
 
 function Sports() {
   return (
     <div className="sports">
-      <h2>스포츠</h2>
+      <TitleText text="스포츠" />
     </div>
   );
 }

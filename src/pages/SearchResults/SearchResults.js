@@ -4,7 +4,7 @@ import VideoCard from '../../components/VideoCard/VideoCard';
 import UserSearchCard from '../../components/UserSearchCard/UserSearchCard';
 import './SearchResults.css';
 import { API_BASE_URL } from '../../config';
-
+import TitleText from '../../components/Text/TitleText';
 function SearchResults() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q');
@@ -52,7 +52,7 @@ function SearchResults() {
   return (
     <div className="searchResults">
       <div className="searchResults__filter">
-        <h2>"{query}" 검색 결과</h2>
+        <TitleText text={`${query} 검색 결과`} />
       </div>
       
       {/* 유저 검색 결과 */}
