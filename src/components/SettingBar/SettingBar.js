@@ -18,8 +18,6 @@ function SettingBar() {
     { icon: KeyboardIcon, text: '단축키' },
     { icon: TranslateIcon, text: '언어: 한국어' },
     { icon: LanguageIcon, text: '위치: 대한민국' },
-    { icon: SecurityIcon, text: '제한 모드: 사용 안함' },
-    { icon: AccountBoxIcon, text: '계정' },
     { icon: DarkModeIcon, text: '디자인: 기기 테마' }
   ];
 

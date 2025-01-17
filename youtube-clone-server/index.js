@@ -239,11 +239,73 @@ app.get('/api/videos', async (req, res) => {
   }
 });
 
-// 검색 API를 먼저 정의
+// 유저 검색 API
+app.get('/api/users/search', async (req, res) => {
+  try {
+    const { q } = req.query;
+    console.log('유저 검색어:', q);
+    
+    if (!q) {
+      return res.status(400).json({ error: '검색어를 입력해주세요.' });
+    }
+
+    // 로그인한 사용자 확인
+    const token = req.headers.authorization?.split(' ')[1];
+    let currentUserId = null;
+    
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        currentUserId = decoded.user_id;
+      } catch (err) {
+        console.log('토큰 검증 실패:', err);
+      }
+    }
+
+    const query = `
+      SELECT 
+        u.user_id,
+        u.user_name,
+        u.profile_image_url,
+        (SELECT COUNT(*) FROM subscriptions WHERE channel_user_id = u.user_id) as subscriber_count,
+        ${currentUserId ? `
+          EXISTS(
+            SELECT 1 
+            FROM subscriptions 
+            WHERE subscriber_id = ? 
+            AND channel_user_id = u.user_id
+          ) as is_subscribed
+        ` : 'FALSE as is_subscribed'}
+      FROM users u
+      WHERE 
+        LOWER(u.user_name) LIKE LOWER(?) OR
+        LOWER(u.email) LIKE LOWER(?)
+      ORDER BY 
+        subscriber_count DESC,
+        u.created_at DESC
+      LIMIT 10
+    `;
+
+    const searchTerm = `%${q}%`;
+    const queryParams = currentUserId ? 
+      [currentUserId, searchTerm, searchTerm] : 
+      [searchTerm, searchTerm];
+
+    const [users] = await db.query(query, queryParams);
+    
+    console.log('유저 검색 결과:', users.length, '명 발견');
+    return res.json(users);
+  } catch (error) {
+    console.error('유저 검색 에러:', error);
+    return res.status(500).json({ error: '서버 에러' });
+  }
+});
+
+// 비디오 검색 API
 app.get('/api/videos/search', async (req, res) => {
   try {
     const { q } = req.query;
-    console.log('검색어:', q);
+    console.log('비디오 검색어:', q);
     
     if (!q) {
       return res.status(400).json({ error: '검색어를 입력해주세요.' });
@@ -254,25 +316,26 @@ app.get('/api/videos/search', async (req, res) => {
         v.*,
         u.user_name,
         u.profile_image_url,
-        (SELECT COUNT(*) FROM likes WHERE video_id = v.video_id) as likes_count
+        (SELECT COUNT(*) FROM likes WHERE video_id = v.video_id) as likes_count,
+        v.views as views
       FROM videos v
       JOIN users u ON v.upload_user_id = u.user_id
       WHERE 
         LOWER(v.title) LIKE LOWER(?) OR 
-        LOWER(v.description) LIKE LOWER(?) OR 
-        LOWER(u.user_name) LIKE LOWER(?)
+        LOWER(v.description) LIKE LOWER(?)
       ORDER BY 
         v.created_at DESC
+      LIMIT 20
     `;
 
     const searchTerm = `%${q}%`;
-    const [videos] = await db.query(query, [searchTerm, searchTerm, searchTerm]);
+    const [videos] = await db.query(query, [searchTerm, searchTerm]);
     
-    console.log('검색 결과:', videos.length, '개 발견');
-    return res.json(videos);
+    console.log('비디오 검색 결과:', videos.length, '개 발견');
+    res.json(videos);
   } catch (error) {
     console.error('비디오 검색 에러:', error);
-    return res.status(500).json({ error: '서버 에러' });
+    res.status(500).json({ error: '서버 에러' });
   }
 });
 
@@ -704,6 +767,33 @@ app.post('/api/videos/:videoId/view', async (req, res) => {
     res.json({ message: '조회수가 증가되었습니다.' });
   } catch (error) {
     console.error('조회수 증가 에러:', error);
+    res.status(500).json({ error: '서버 에러' });
+  }
+});
+
+// 좋아요한 비디오 목록 가져오기 API
+app.get('/api/videos/liked/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const query = `
+      SELECT 
+        v.*,
+        u.user_name,
+        u.profile_image_url,
+        (SELECT COUNT(*) FROM likes WHERE video_id = v.video_id) as likes_count,
+        v.views as views,
+        TRUE as is_liked
+      FROM videos v
+      JOIN users u ON v.upload_user_id = u.user_id
+      JOIN likes l ON v.video_id = l.video_id
+      WHERE l.user_id = ?
+    `;
+    
+    const [videos] = await db.query(query, [userId]);
+    res.json(videos);
+  } catch (error) {
+    console.error('좋아요한 비디오 목록 조회 에러:', error);
     res.status(500).json({ error: '서버 에러' });
   }
 });

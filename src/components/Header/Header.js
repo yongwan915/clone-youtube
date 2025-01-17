@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './Header.css';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchBar from '../SearchBar/SearchBar';
@@ -13,7 +13,28 @@ import CreateVideoButton from '../Button/CreateVideoButton';
 function Header({ onMenuClick }) {
   const [showSettings, setShowSettings] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const settingsRef = useRef(null);
+  const profileRef = useRef(null);
   const isLoggedIn = localStorage.getItem('token');
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // 설정 메뉴 외부 클릭 감지
+      if (settingsRef.current && !settingsRef.current.contains(event.target)) {
+        setShowSettings(false);
+      }
+      
+      // 프로필 메뉴 외부 클릭 감지
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -44,19 +65,23 @@ function Header({ onMenuClick }) {
 
       <div className="header__right">
         <CreateVideoButton isLoggedIn={isLoggedIn} />
-        <SettingsIcon 
-          className="header__icon" 
-          onClick={() => setShowSettings(!showSettings)}
-        />
-        <LoginButton 
-          isLoggedIn={isLoggedIn}
-          onClick={handleProfileClick}
-        >
-          {showProfileMenu && (
-            <ProfileDropdown onLogout={handleLogout} />
-          )}
-        </LoginButton>
-        {showSettings && <SettingBar />}
+        <div ref={settingsRef}>
+          <SettingsIcon 
+            className="header__icon" 
+            onClick={() => setShowSettings(!showSettings)}
+          />
+          {showSettings && <SettingBar />}
+        </div>
+        <div ref={profileRef}>
+          <LoginButton 
+            isLoggedIn={isLoggedIn}
+            onClick={handleProfileClick}
+          >
+            {showProfileMenu && (
+              <ProfileDropdown onLogout={handleLogout} />
+            )}
+          </LoginButton>
+        </div>
       </div>
     </div>
   );

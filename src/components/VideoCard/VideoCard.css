@@ -2,10 +2,12 @@
   width: 270px;
   margin-bottom: 40px;
   cursor: pointer;
+  text-decoration: none;
+  color: inherit;
 }
 
 .videoCard__thumbnail {
-  height: 140px;
+  height: 155px;
   width: 250px;
   object-fit: cover;
   border-radius: 10px;
@@ -14,7 +16,8 @@
 .videoCard__info {
   display: flex;
   margin-top: 10px;
-  padding-right: 30px;
+  width: 250px;
+  padding-right: 0;
 }
 
 .videoCard__text {
@@ -24,15 +27,22 @@
 .videoCard__text > h4 {
   font-size: 14px;
   margin-bottom: 5px;
+  font-weight: normal;
+  color: inherit;
 }
 
 .videoCard__text > p {
   font-size: 14px;
   color: gray;
   margin-bottom: 3px;
+  text-decoration: none;
 }
 
 .videoCard__avatar {
   height: 30px !important;
   width: 30px !important;
+}
+
+.videoCard__channel {
+  text-decoration: none;
 } 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import VideoCard from '../../components/VideoCard/VideoCard';
+import UserSearchCard from '../../components/UserSearchCard/UserSearchCard';
 import './SearchResults.css';
 import { API_BASE_URL } from '../../config';
 
@@ -8,6 +9,7 @@ function SearchResults() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q');
   const [videos, setVideos] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -15,21 +17,22 @@ function SearchResults() {
     const fetchSearchResults = async () => {
       try {
         setLoading(true);
-        console.log('검색 요청 URL:', `${API_BASE_URL}/api/videos/search?q=${encodeURIComponent(query)}`);
         
-        const response = await fetch(`${API_BASE_URL}/api/videos/search?q=${encodeURIComponent(query)}`);
-        console.log('서버 응답 상태:', response.status);
-        console.log('서버 응답 헤더:', [...response.headers.entries()]);
+        // 비디오 검색
+        const videoResponse = await fetch(`${API_BASE_URL}/api/videos/search?q=${encodeURIComponent(query)}`);
         
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.error('서버 에러 응답:', errorData);
-          throw new Error(errorData.error || '검색 결과를 가져오는데 실패했습니다.');
+        // 유저 검색
+        const userResponse = await fetch(`${API_BASE_URL}/api/users/search?q=${encodeURIComponent(query)}`);
+        
+        if (!videoResponse.ok || !userResponse.ok) {
+          throw new Error('검색 결과를 가져오는데 실패했습니다.');
         }
         
-        const data = await response.json();
-        console.log('검색 결과 데이터:', data);
-        setVideos(data);
+        const videoData = await videoResponse.json();
+        const userData = await userResponse.json();
+        
+        setVideos(videoData);
+        setUsers(userData);
       } catch (error) {
         console.error('검색 실패:', error);
         setError(error.message);
@@ -51,7 +54,29 @@ function SearchResults() {
       <div className="searchResults__filter">
         <h2>"{query}" 검색 결과</h2>
       </div>
+      
+      {/* 유저 검색 결과 */}
+      {users.length > 0 && (
+        <div className="searchResults__users">
+          <h3>채널</h3>
+          {users.map((user) => (
+            <UserSearchCard
+              key={user.user_id}
+              user_id={user.user_id}
+              profileImage={user.profile_image_url 
+                ? `${API_BASE_URL}${user.profile_image_url}` 
+                : "https://yt3.ggpht.com/ytc/default-avatar.jpg"}
+              userName={user.user_name}
+              subscriberCount={user.subscriber_count}
+              isSubscribed={user.is_subscribed}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* 비디오 검색 결과 */}
       <div className="searchResults__videos">
+        <h3>동영상</h3>
         {videos.length === 0 ? (
           <p className="searchResults__noResults">검색 결과가 없습니다.</p>
         ) : (
